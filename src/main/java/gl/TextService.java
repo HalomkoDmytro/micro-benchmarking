@@ -1,44 +1,84 @@
 package gl;
 
-import java.util.List;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@Fork(value = 1)
+@Warmup(iterations = 2)
+@Measurement(iterations = 5)
 public class TextService {
 
+    @State(Scope.Thread)
+    public static class MyState {
+        public String text = "";
+        int[] integers = ThreadLocalRandom.current().ints().limit(100_000).toArray();
+    }
+
+    @Benchmark
     public String staticText() {
         return "Some static text";
     }
 
-    public String variable(String variable) {
-        return variable;
+    @Benchmark
+    public String variable(MyState myState) {
+        return myState.text;
     }
 
-    public String exception(String text) throws RuntimeException {
+    @Benchmark
+    public String exception(MyState myStatet) throws RuntimeException {
         throw new CustomException();
     }
 
-    public String exceptionCatch(String text) throws RuntimeException {
+    @Benchmark
+    public String exceptionCatch(MyState myState) throws RuntimeException {
         try {
             throw new CustomException();
         } catch (CustomException ex) {
         }
-        return text;
+        return myState.text;
     }
 
-    public String exceptionCatchWithStackTrace(String text) throws RuntimeException {
+    @Benchmark
+    public String exceptionCatchWithStackTrace(MyState myState) throws RuntimeException {
         try {
             throw new CustomException();
         } catch (CustomException ex) {
             ex.printStackTrace();
         }
-        return text;
+        return myState.text;
     }
 
-    public void forLoop(List<Integer> list) {
-        for(Integer i : list) {
+    @Benchmark
+    public void forLoop(MyState ar) {
+        List<Object> list = new ArrayList<>();
+        for (Object i : ar.integers) {
+            list.add(i);
         }
+
     }
 
-    public void streamLoop(List<Integer> list) {
-        list.stream().forEach(x -> {});
+    @Benchmark
+    public void streamLoop(MyState ar) {
+        List<Object> list = new ArrayList<>();
+
+        Arrays.stream(ar.integers).forEach(x -> {
+            list.add(x);
+        });
+
     }
 }
